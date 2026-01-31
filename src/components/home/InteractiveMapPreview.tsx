@@ -1,133 +1,46 @@
 import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { MapContainer, TileLayer, Polyline, Marker, useMap } from "react-leaflet";
-import L from "leaflet";
-import { Car, Bike, Clock, Navigation, MapPin } from "lucide-react";
-import "leaflet/dist/leaflet.css";
+import { motion } from "framer-motion";
+import { Car, Bike, Clock, Navigation, MapPin, Route as RouteIcon } from "lucide-react";
 
-// Custom vehicle icons
-const createVehicleIcon = (type: "car" | "bike") => {
-  return L.divIcon({
-    className: "custom-vehicle-icon",
-    html: `
-      <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg animate-pulse">
-        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-          ${type === "car" 
-            ? '<path d="M5 11h14l1-3H4l1 3zm11 5a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4zm12-5.5V16a1 1 0 01-1 1h-1a2 2 0 01-4 0H10a2 2 0 01-4 0H5a1 1 0 01-1-1v-5.5l1.5-4.5a1 1 0 01.95-.7h11.1a1 1 0 01.95.7l1.5 4.5z"/>'
-            : '<path d="M19 10h-1V8.95a1 1 0 00-.42-.8L14.12 5.7a3 3 0 00-4.24 0L6.42 8.15a1 1 0 00-.42.8V10H5a1 1 0 100 2h1v5a2 2 0 002 2h8a2 2 0 002-2v-5h1a1 1 0 100-2zm-7-3a1 1 0 011 0l2 1.5H10L12 7zm2 10H10v-5h4v5z"/>'
-          }
-        </svg>
-      </div>
-    `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-  });
-};
-
-const startIcon = L.divIcon({
-  className: "custom-marker",
-  html: `
-    <div class="w-8 h-8 rounded-full bg-forest flex items-center justify-center shadow-lg border-2 border-white">
-      <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-      </svg>
-    </div>
-  `,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-});
-
-const endIcon = L.divIcon({
-  className: "custom-marker",
-  html: `
-    <div class="w-8 h-8 rounded-full bg-accent flex items-center justify-center shadow-lg border-2 border-white">
-      <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-      </svg>
-    </div>
-  `,
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-});
-
-// Route coordinates (Mumbai to Pune example)
-const routeCoordinates: [number, number][] = [
-  [19.076, 72.8777], // Mumbai
-  [19.0144, 72.8479],
-  [18.9667, 72.8194],
-  [18.8523, 73.0129],
-  [18.7167, 73.2036],
-  [18.5204, 73.8567], // Pune
+// Route points for visualization
+const routePoints = [
+  { name: "Mumbai", lat: 19.076, lng: 72.8777 },
+  { name: "Lonavala", lat: 18.7546, lng: 73.4062 },
+  { name: "Pune", lat: 18.5204, lng: 73.8567 },
 ];
 
-// Animated vehicle component
-function AnimatedVehicle({ 
-  route, 
-  vehicleType 
-}: { 
-  route: [number, number][]; 
-  vehicleType: "car" | "bike";
-}) {
-  const [position, setPosition] = useState<[number, number]>(route[0]);
-  const [routeIndex, setRouteIndex] = useState(0);
+export function InteractiveMapPreview() {
+  const [vehicleType, setVehicleType] = useState<"car" | "bike">("car");
+  const [vehiclePosition, setVehiclePosition] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
   const animationRef = useRef<number>();
 
+  // Animate vehicle along route
   useEffect(() => {
-    let startTime: number;
-    const duration = 4000; // 4 seconds per segment
+    if (!isVisible) return;
 
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = (timestamp - startTime) / duration;
-
-      if (progress >= 1) {
-        setRouteIndex((prev) => {
-          const next = (prev + 1) % (route.length - 1);
-          return next;
-        });
-        startTime = timestamp;
-      } else {
-        const currentIndex = routeIndex;
-        const nextIndex = (currentIndex + 1) % route.length;
-        
-        const lat = route[currentIndex][0] + (route[nextIndex][0] - route[currentIndex][0]) * progress;
-        const lng = route[currentIndex][1] + (route[nextIndex][1] - route[currentIndex][1]) * progress;
-        
-        setPosition([lat, lng]);
-      }
-
+    const animate = () => {
+      setVehiclePosition((prev) => {
+        const next = prev + 0.5;
+        return next > 100 ? 0 : next;
+      });
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    animationRef.current = requestAnimationFrame(animate);
+    const intervalId = setInterval(() => {
+      setVehiclePosition((prev) => {
+        const next = prev + 1;
+        return next > 100 ? 0 : next;
+      });
+    }, 50);
 
     return () => {
+      clearInterval(intervalId);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [routeIndex, route]);
-
-  return <Marker position={position} icon={createVehicleIcon(vehicleType)} />;
-}
-
-// Map bounds fitter
-function FitBounds({ coordinates }: { coordinates: [number, number][] }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (coordinates.length > 0) {
-      const bounds = L.latLngBounds(coordinates);
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  }, [map, coordinates]);
-
-  return null;
-}
-
-export function InteractiveMapPreview() {
-  const [vehicleType, setVehicleType] = useState<"car" | "bike">("car");
-  const [isVisible, setIsVisible] = useState(false);
+  }, [isVisible]);
 
   return (
     <section className="py-24 bg-muted/30 relative overflow-hidden">
@@ -173,7 +86,7 @@ export function InteractiveMapPreview() {
           {/* Map Card */}
           <div className="relative rounded-3xl overflow-hidden border border-border bg-card shadow-elevated">
             {/* Vehicle Toggle */}
-            <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2 p-1 bg-card/90 backdrop-blur-md rounded-full border border-border shadow-lg">
+            <div className="absolute top-4 right-4 z-20 flex items-center gap-2 p-1 bg-card/90 backdrop-blur-md rounded-full border border-border shadow-lg">
               <button
                 onClick={() => setVehicleType("car")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
@@ -199,7 +112,7 @@ export function InteractiveMapPreview() {
             </div>
 
             {/* Route Info Panel */}
-            <div className="absolute bottom-4 left-4 z-[1000] p-4 bg-card/90 backdrop-blur-md rounded-2xl border border-border shadow-lg max-w-xs">
+            <div className="absolute bottom-4 left-4 z-20 p-4 bg-card/90 backdrop-blur-md rounded-2xl border border-border shadow-lg max-w-xs">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-forest/10 flex items-center justify-center">
                   <Navigation className="w-5 h-5 text-forest" />
@@ -221,7 +134,7 @@ export function InteractiveMapPreview() {
               <div className="flex items-center gap-4 pt-3 border-t border-border">
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">3h 15m</span>
+                  <span className="text-sm font-medium">{vehicleType === "car" ? "3h 15m" : "4h 30m"}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm text-muted-foreground">148 km</span>
@@ -232,52 +145,174 @@ export function InteractiveMapPreview() {
               </div>
             </div>
 
-            {/* Map */}
-            <div className="h-[500px]">
-              {isVisible && (
-                <MapContainer
-                  center={[18.8, 73.3]}
-                  zoom={9}
-                  className="h-full w-full"
-                  zoomControl={false}
-                  attributionControl={false}
-                >
-                  <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                  />
-                  <FitBounds coordinates={routeCoordinates} />
-                  
-                  {/* Route Line */}
-                  <Polyline
-                    positions={routeCoordinates}
-                    pathOptions={{
-                      color: "hsl(174, 62%, 40%)",
-                      weight: 5,
-                      opacity: 0.8,
-                      dashArray: "10, 10",
-                    }}
-                  />
-                  
-                  {/* Solid route overlay */}
-                  <Polyline
-                    positions={routeCoordinates}
-                    pathOptions={{
-                      color: "hsl(174, 62%, 50%)",
-                      weight: 3,
-                      opacity: 1,
-                    }}
-                  />
+            {/* Map Visualization */}
+            <div className="h-[500px] relative bg-gradient-to-br from-muted via-background to-muted overflow-hidden">
+              {/* Grid Pattern */}
+              <div 
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
+                    linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "40px 40px"
+                }}
+              />
 
-                  {/* Start Marker */}
-                  <Marker position={routeCoordinates[0]} icon={startIcon} />
-                  
-                  {/* End Marker */}
-                  <Marker position={routeCoordinates[routeCoordinates.length - 1]} icon={endIcon} />
-                  
-                  {/* Animated Vehicle */}
-                  <AnimatedVehicle route={routeCoordinates} vehicleType={vehicleType} />
-                </MapContainer>
-              )}
+              {/* Route Path SVG */}
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+                {/* Route Path - Dashed */}
+                <motion.path
+                  d="M 150 100 Q 300 150 400 200 T 650 400"
+                  fill="none"
+                  stroke="hsl(var(--primary) / 0.3)"
+                  strokeWidth="8"
+                  strokeDasharray="20 10"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 2, ease: "easeInOut" }}
+                />
+                
+                {/* Route Path - Solid Glow */}
+                <motion.path
+                  d="M 150 100 Q 300 150 400 200 T 650 400"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 2, ease: "easeInOut", delay: 0.5 }}
+                  filter="url(#glow)"
+                />
+
+                {/* Glow Filter */}
+                <defs>
+                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                {/* Start Point */}
+                <motion.g
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
+                >
+                  <circle cx="150" cy="100" r="20" fill="hsl(var(--forest))" opacity="0.2" />
+                  <circle cx="150" cy="100" r="12" fill="hsl(var(--forest))" />
+                  <circle cx="150" cy="100" r="5" fill="white" />
+                </motion.g>
+
+                {/* Waypoint */}
+                <motion.g
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 1, duration: 0.5, type: "spring" }}
+                >
+                  <circle cx="400" cy="200" r="15" fill="hsl(var(--primary))" opacity="0.2" />
+                  <circle cx="400" cy="200" r="8" fill="hsl(var(--primary))" />
+                  <circle cx="400" cy="200" r="3" fill="white" />
+                </motion.g>
+
+                {/* End Point */}
+                <motion.g
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 1.5, duration: 0.5, type: "spring" }}
+                >
+                  <circle cx="650" cy="400" r="20" fill="hsl(var(--accent))" opacity="0.2" />
+                  <circle cx="650" cy="400" r="12" fill="hsl(var(--accent))" />
+                  <circle cx="650" cy="400" r="5" fill="white" />
+                </motion.g>
+              </svg>
+
+              {/* Animated Vehicle */}
+              <motion.div
+                className="absolute z-10"
+                style={{
+                  left: `${15 + (vehiclePosition / 100) * 55}%`,
+                  top: `${10 + (vehiclePosition / 100) * 65}%`,
+                }}
+              >
+                <motion.div 
+                  className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center shadow-glow"
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  {vehicleType === "car" ? (
+                    <Car className="w-6 h-6 text-primary-foreground" />
+                  ) : (
+                    <Bike className="w-6 h-6 text-primary-foreground" />
+                  )}
+                </motion.div>
+              </motion.div>
+
+              {/* City Labels */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+                className="absolute top-[8%] left-[15%] text-center"
+              >
+                <div className="bg-card/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-border shadow-md">
+                  <p className="font-semibold text-foreground text-sm">Mumbai</p>
+                  <p className="text-xs text-muted-foreground">Start</p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2 }}
+                className="absolute top-[35%] left-[48%] text-center"
+              >
+                <div className="bg-card/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-border shadow-md">
+                  <p className="font-semibold text-foreground text-sm">Lonavala</p>
+                  <p className="text-xs text-muted-foreground">Waypoint</p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.6 }}
+                className="absolute bottom-[12%] right-[15%] text-center"
+              >
+                <div className="bg-card/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-border shadow-md">
+                  <p className="font-semibold text-foreground text-sm">Pune</p>
+                  <p className="text-xs text-muted-foreground">Destination</p>
+                </div>
+              </motion.div>
+
+              {/* Distance/Time Badges */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2 }}
+                className="absolute top-[22%] left-[32%]"
+              >
+                <div className="bg-primary/10 backdrop-blur-sm px-2 py-1 rounded-full border border-primary/20">
+                  <p className="text-xs text-primary font-medium">65 km • 1h 30m</p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2.2 }}
+                className="absolute bottom-[35%] right-[28%]"
+              >
+                <div className="bg-primary/10 backdrop-blur-sm px-2 py-1 rounded-full border border-primary/20">
+                  <p className="text-xs text-primary font-medium">83 km • 1h 45m</p>
+                </div>
+              </motion.div>
             </div>
           </div>
         </motion.div>

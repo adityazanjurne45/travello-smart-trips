@@ -3,10 +3,10 @@ import { useRef, useState, useEffect } from "react";
 import { Star, Users, MapPin, Clock } from "lucide-react";
 
 const stats = [
-  { value: 10000, suffix: "+", label: "Happy Travelers", icon: Users },
-  { value: 500, suffix: "+", label: "Destinations", icon: MapPin },
-  { value: 4.9, suffix: "", label: "User Rating", icon: Star, isDecimal: true },
-  { value: 24, suffix: "/7", label: "AI Support", icon: Clock },
+  { value: 10000, suffix: "+", label: "Happy Travelers", icon: Users, color: "primary" },
+  { value: 500, suffix: "+", label: "Destinations", icon: MapPin, color: "accent" },
+  { value: 4.9, suffix: "", label: "User Rating", icon: Star, isDecimal: true, color: "golden" },
+  { value: 24, suffix: "/7", label: "AI Support", icon: Clock, color: "ocean" },
 ];
 
 function AnimatedCounter({ 
@@ -53,9 +53,12 @@ function AnimatedCounter({
 
 export function StatsSection() {
   return (
-    <section className="py-16 bg-card border-y border-border">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+    <section className="py-20 md:py-24 bg-card border-y border-border relative overflow-hidden">
+      {/* Subtle background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/3 via-transparent to-accent/3" />
+      
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -65,17 +68,20 @@ export function StatsSection() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="text-center group"
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4 group-hover:bg-primary/20 transition-colors">
-                <stat.icon className="w-6 h-6 text-primary" />
-              </div>
-              <div className="font-display text-4xl font-bold text-foreground mb-1">
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary/10 mb-5 group-hover:shadow-glow transition-all duration-300"
+              >
+                <stat.icon className="w-7 h-7 md:w-8 md:h-8 text-primary" />
+              </motion.div>
+              <div className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-2">
                 <AnimatedCounter 
                   value={stat.value} 
                   suffix={stat.suffix} 
                   isDecimal={stat.isDecimal}
                 />
               </div>
-              <p className="text-muted-foreground">{stat.label}</p>
+              <p className="text-muted-foreground font-medium">{stat.label}</p>
             </motion.div>
           ))}
         </div>

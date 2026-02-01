@@ -98,9 +98,9 @@ export function HeroSection() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="font-display text-5xl md:text-7xl lg:text-8xl font-bold text-center mb-6"
         >
-          <span className="text-foreground">Plan Smarter.</span>
+          <span className="text-foreground">Your Journey,</span>
           <br />
-          <span className="text-gradient-primary">Travel Better.</span>
+          <span className="text-gradient-primary">Our Intelligence.</span>
         </motion.h1>
 
         {/* Tagline */}

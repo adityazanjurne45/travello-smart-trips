@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,16 +9,50 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, User, MapPin, Wallet, Car, Utensils, Languages, Save } from "lucide-react";
+import { motion } from "framer-motion";
+import { 
+  Loader2, 
+  User, 
+  MapPin, 
+  Wallet, 
+  Car, 
+  Utensils, 
+  Languages, 
+  Save,
+  Camera,
+  Mail,
+  Phone,
+  Home,
+  Users,
+  Clock,
+  Hotel,
+  AlertTriangle
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const travelStyles = ["solo", "couple", "family", "group"] as const;
 const accommodationTypes = ["budget", "mid-range", "luxury", "hostel", "homestay", "resort"] as const;
 const transportTypes = ["bike", "car", "public", "flight", "train"] as const;
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
 export default function Profile() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     full_name: "",
@@ -60,12 +94,48 @@ export default function Profile() {
           food_preference: data.food_preference || "",
           language_preference: data.language_preference || "English",
         });
+        setAvatarUrl(data.avatar_url);
       }
       setLoading(false);
     }
 
     loadProfile();
   }, [user]);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("user_id", user.id);
+
+      setAvatarUrl(publicUrl);
+      toast.success("Avatar updated successfully");
+    } catch (error) {
+      toast.error("Failed to upload avatar");
+      setAvatarUrl(null);
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -98,79 +168,152 @@ export default function Profile() {
 
   return (
     <Layout>
-      <div className="gradient-hero min-h-screen py-8">
+      <div className="gradient-hero min-h-screen pt-24 pb-12">
         <div className="container mx-auto px-4 max-w-4xl">
-          <div className="mb-8">
-            <h1 className="font-display text-3xl font-bold text-foreground mb-2">
+          {/* Header */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10"
+          >
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
               Your Profile
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-lg">
               Customize your preferences for better AI recommendations
             </p>
-          </div>
+          </motion.div>
 
-          <div className="space-y-6">
-            {/* Personal Info */}
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-                  <User className="w-5 h-5 text-primary-foreground" />
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            {/* Avatar & Personal Info */}
+            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+                  <User className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <h2 className="font-display text-xl font-semibold">Personal Information</h2>
+                <div>
+                  <h2 className="font-display text-xl font-bold">Personal Information</h2>
+                  <p className="text-sm text-muted-foreground">Your basic account details</p>
+                </div>
+              </div>
+
+              {/* Avatar Upload */}
+              <div className="flex flex-col sm:flex-row items-center gap-6 mb-8 p-6 bg-muted/30 rounded-2xl">
+                <div className="relative">
+                  <Avatar className="w-24 h-24 md:w-28 md:h-28 border-4 border-background shadow-lg">
+                    <AvatarImage src={avatarUrl || undefined} />
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-2xl font-bold">
+                      {formData.full_name?.charAt(0) || user?.email?.charAt(0)?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 w-9 h-9 rounded-full gradient-primary flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                  >
+                    <Camera className="w-4 h-4 text-primary-foreground" />
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </div>
+                <div className="text-center sm:text-left">
+                  <h3 className="font-semibold text-foreground mb-1">Profile Photo</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Upload a photo to personalize your account
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Change Photo
+                  </Button>
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
+                  <Label htmlFor="full_name" className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    Full Name
+                  </Label>
                   <Input
                     id="full_name"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                     placeholder="John Doe"
+                    className="h-12"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" value={user?.email || ""} disabled className="bg-muted" />
+                  <Label htmlFor="email" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    Email
+                  </Label>
+                  <Input id="email" value={user?.email || ""} disabled className="h-12 bg-muted" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone" className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    Phone Number
+                  </Label>
                   <Input
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+91 9876543210"
+                    className="h-12"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="home_city">Home City</Label>
+                  <Label htmlFor="home_city" className="flex items-center gap-2">
+                    <Home className="w-4 h-4 text-muted-foreground" />
+                    Home City
+                  </Label>
                   <Input
                     id="home_city"
                     value={formData.home_city}
                     onChange={(e) => setFormData({ ...formData, home_city: e.target.value })}
                     placeholder="Mumbai"
+                    className="h-12"
                   />
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Travel Preferences */}
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-primary-foreground" />
+            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+                  <MapPin className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <h2 className="font-display text-xl font-semibold">Travel Preferences</h2>
+                <div>
+                  <h2 className="font-display text-xl font-bold">Travel Preferences</h2>
+                  <p className="text-sm text-muted-foreground">How you like to travel</p>
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Travel Style</Label>
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    Travel Style
+                  </Label>
                   <Select
                     value={formData.travel_style}
                     onValueChange={(v) => setFormData({ ...formData, travel_style: v as typeof travelStyles[number] })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -181,9 +324,12 @@ export default function Profile() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Preferred Trip Duration (days)</Label>
-                  <div className="pt-2">
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    Preferred Trip Duration
+                  </Label>
+                  <div className="pt-2 px-1">
                     <Slider
                       value={[formData.preferred_duration]}
                       onValueChange={([v]) => setFormData({ ...formData, preferred_duration: v })}
@@ -191,25 +337,39 @@ export default function Profile() {
                       max={30}
                       step={1}
                     />
-                    <p className="text-sm text-muted-foreground mt-2">{formData.preferred_duration} days</p>
+                    <div className="flex justify-between mt-2">
+                      <span className="text-sm text-muted-foreground">1 day</span>
+                      <span className="text-sm font-semibold text-primary">{formData.preferred_duration} days</span>
+                      <span className="text-sm text-muted-foreground">30 days</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Budget */}
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg gradient-accent flex items-center justify-center">
-                  <Wallet className="w-5 h-5 text-accent-foreground" />
+            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-xl gradient-accent flex items-center justify-center">
+                  <Wallet className="w-6 h-6 text-accent-foreground" />
                 </div>
-                <h2 className="font-display text-xl font-semibold">Budget Range</h2>
+                <div>
+                  <h2 className="font-display text-xl font-bold">Budget Range</h2>
+                  <p className="text-sm text-muted-foreground">Your typical trip budget range</p>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex justify-between text-sm">
-                  <span>₹{formData.min_budget.toLocaleString()}</span>
-                  <span>₹{formData.max_budget.toLocaleString()}</span>
+              <div className="bg-muted/30 rounded-2xl p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-1">Minimum</p>
+                    <p className="text-2xl font-bold text-foreground">₹{formData.min_budget.toLocaleString()}</p>
+                  </div>
+                  <div className="h-8 w-px bg-border" />
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-1">Maximum</p>
+                    <p className="text-2xl font-bold text-primary">₹{formData.max_budget.toLocaleString()}</p>
+                  </div>
                 </div>
                 <Slider
                   value={[formData.min_budget, formData.max_budget]}
@@ -217,27 +377,38 @@ export default function Profile() {
                   min={0}
                   max={200000}
                   step={1000}
+                  className="my-6"
                 />
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>₹0</span>
+                  <span>₹2,00,000</span>
+                </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Accommodation & Transport */}
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-                  <Car className="w-5 h-5 text-primary-foreground" />
+            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+                  <Hotel className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <h2 className="font-display text-xl font-semibold">Accommodation & Transport</h2>
+                <div>
+                  <h2 className="font-display text-xl font-bold">Accommodation & Transport</h2>
+                  <p className="text-sm text-muted-foreground">Your stay and travel preferences</p>
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>Accommodation Type</Label>
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Hotel className="w-4 h-4 text-muted-foreground" />
+                    Accommodation Type
+                  </Label>
                   <Select
                     value={formData.accommodation_preference}
                     onValueChange={(v) => setFormData({ ...formData, accommodation_preference: v as typeof accommodationTypes[number] })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -250,13 +421,16 @@ export default function Profile() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Preferred Transport</Label>
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Car className="w-4 h-4 text-muted-foreground" />
+                    Preferred Transport
+                  </Label>
                   <Select
                     value={formData.transportation_preference}
                     onValueChange={(v) => setFormData({ ...formData, transportation_preference: v as typeof transportTypes[number] })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -268,71 +442,87 @@ export default function Profile() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-center justify-between md:col-span-2">
+              </div>
+
+              <div className="mt-6 p-4 bg-muted/30 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-primary" />
                   <div>
-                    <Label>Traffic Sensitive</Label>
+                    <Label className="font-semibold">Traffic Sensitive</Label>
                     <p className="text-sm text-muted-foreground">Optimize routes based on traffic conditions</p>
                   </div>
-                  <Switch
-                    checked={formData.traffic_sensitive}
-                    onCheckedChange={(v) => setFormData({ ...formData, traffic_sensitive: v })}
-                  />
                 </div>
+                <Switch
+                  checked={formData.traffic_sensitive}
+                  onCheckedChange={(v) => setFormData({ ...formData, traffic_sensitive: v })}
+                />
               </div>
-            </div>
+            </motion.div>
 
             {/* Food & Language */}
-            <div className="bg-card rounded-2xl p-6 border border-border">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-                  <Utensils className="w-5 h-5 text-primary-foreground" />
+            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+                  <Utensils className="w-6 h-6 text-primary-foreground" />
                 </div>
-                <h2 className="font-display text-xl font-semibold">Food & Language</h2>
+                <div>
+                  <h2 className="font-display text-xl font-bold">Food & Language</h2>
+                  <p className="text-sm text-muted-foreground">Dietary and language preferences</p>
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="food">Food Preference</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="food" className="flex items-center gap-2">
+                    <Utensils className="w-4 h-4 text-muted-foreground" />
+                    Food Preference
+                  </Label>
                   <Input
                     id="food"
                     value={formData.food_preference}
                     onChange={(e) => setFormData({ ...formData, food_preference: e.target.value })}
                     placeholder="Vegetarian, Vegan, Non-veg, etc."
+                    className="h-12"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="language">Language Preference</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="language" className="flex items-center gap-2">
+                    <Languages className="w-4 h-4 text-muted-foreground" />
+                    Language Preference
+                  </Label>
                   <Input
                     id="language"
                     value={formData.language_preference}
                     onChange={(e) => setFormData({ ...formData, language_preference: e.target.value })}
                     placeholder="English, Hindi, etc."
+                    className="h-12"
                   />
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Save Button */}
-            <div className="flex justify-end">
+            <motion.div variants={itemVariants} className="flex justify-end pt-4">
               <Button 
                 onClick={handleSave} 
                 disabled={saving}
-                className="gradient-primary px-8"
+                size="lg"
+                className="gradient-primary px-10 h-14 text-lg font-semibold shadow-glow"
               >
                 {saving ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 mr-2" />
+                    <Save className="w-5 h-5 mr-2" />
                     Save Changes
                   </>
                 )}
               </Button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </Layout>

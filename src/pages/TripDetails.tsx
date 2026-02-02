@@ -4,6 +4,8 @@ import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { DestinationImage } from "@/components/trip/DestinationImage";
+import { SatelliteMap } from "@/components/trip/SatelliteMap";
 import { 
   MapPin, 
   Calendar, 
@@ -19,7 +21,8 @@ import {
   Loader2,
   Sparkles,
   Sun,
-  CloudRain
+  CloudRain,
+  Map
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -195,7 +198,7 @@ export default function TripDetails() {
     <Layout>
       <div className="gradient-hero min-h-screen py-8">
         <div className="container mx-auto px-4 max-w-5xl">
-          {/* Header */}
+          {/* Header with Destination Image */}
           <div className="mb-8">
             <Link
               to="/my-trips"
@@ -205,12 +208,18 @@ export default function TripDetails() {
               Back to My Trips
             </Link>
 
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-              <div>
-                <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">
+            {/* Hero Image */}
+            <div className="relative h-48 md:h-64 rounded-2xl overflow-hidden mb-6">
+              <DestinationImage 
+                destination={trip.destination_city}
+                className="w-full h-full"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <h1 className="font-display text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-lg">
                   {trip.boarding_city} → {trip.destination_city}
                 </h1>
-                <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-4 text-white/90">
                   <span className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     {trip.duration} days
@@ -221,19 +230,19 @@ export default function TripDetails() {
                   </span>
                 </div>
               </div>
-
-              <div className="flex gap-2">
+              
+              {/* Action buttons */}
+              <div className="absolute top-4 right-4 flex gap-2">
                 <Button
-                  variant="outline"
+                  variant="secondary"
+                  size="sm"
                   onClick={toggleFavorite}
-                  className="gap-2"
+                  className="bg-white/20 backdrop-blur-sm hover:bg-white/30 border-0"
                 >
-                  <Heart className={`w-4 h-4 ${trip.is_favorite ? "fill-accent text-accent" : ""}`} />
-                  {trip.is_favorite ? "Favorited" : "Favorite"}
+                  <Heart className={`w-4 h-4 ${trip.is_favorite ? "fill-accent text-accent" : "text-white"}`} />
                 </Button>
-                <Button variant="outline" className="gap-2">
-                  <Download className="w-4 h-4" />
-                  Download Plan
+                <Button variant="secondary" size="sm" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 border-0">
+                  <Download className="w-4 h-4 text-white" />
                 </Button>
               </div>
             </div>
@@ -260,6 +269,30 @@ export default function TripDetails() {
           {/* Recommendations Content */}
           {recommendations && (
             <div className="space-y-8">
+              {/* Interactive Satellite Map */}
+              <div className="bg-card rounded-2xl p-6 border border-border">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+                    <Map className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h2 className="font-display text-xl font-semibold">Interactive Trip Map</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Explore hotels and attractions on a satellite view
+                    </p>
+                  </div>
+                </div>
+                
+                <SatelliteMap
+                  boardingCity={trip.boarding_city}
+                  destinationCity={trip.destination_city}
+                  hotels={recommendations.hotels}
+                  attractions={recommendations.touristPlaces}
+                  className="h-[400px] md:h-[500px]"
+                />
+              </div>
+
+
               {/* Weather & Warnings */}
               <div className="grid md:grid-cols-2 gap-6">
                 {recommendations.weather && (

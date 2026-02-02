@@ -16,6 +16,7 @@ import {
   Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DestinationImage } from "@/components/trip/DestinationImage";
 import type { Tables } from "@/integrations/supabase/types";
 import heroImage from "@/assets/hero-mountains.jpg";
 
@@ -154,9 +155,13 @@ function TripCard({ trip, variant = "default" }: { trip: Trip; variant?: "defaul
       to={`/trip/${trip.id}`}
       className="group block bg-card rounded-xl overflow-hidden border border-border hover:border-primary/40 transition-all hover:shadow-medium"
     >
-      {/* Placeholder image with gradient */}
-      <div className={`relative ${isCompact ? 'h-28' : 'h-36'} bg-gradient-to-br from-primary/20 via-accent/10 to-primary/5`}>
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%2314b8a6%22%20fill-opacity%3D%220.1%22%20d%3D%22M0%2C100%20L50%2C20%20L100%2C100%20Z%22%2F%3E%3C%2Fsvg%3E')] bg-cover opacity-50" />
+      {/* Destination image */}
+      <div className={`relative ${isCompact ? 'h-28' : 'h-36'} overflow-hidden`}>
+        <DestinationImage 
+          destination={trip.destination_city} 
+          className="w-full h-full transition-transform duration-300 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
       </div>
       
       <div className={`${isCompact ? 'p-3' : 'p-4'}`}>

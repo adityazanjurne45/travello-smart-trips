@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DestinationImage } from "@/components/trip/DestinationImage";
 import { 
   MapPin, 
   Calendar, 
@@ -200,51 +201,68 @@ function TripCard({
   onDelete: (id: string) => void;
 }) {
   return (
-    <div className="group bg-card rounded-2xl p-6 border border-border hover:border-primary/30 hover:shadow-medium transition-all">
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-          <MapPin className="w-6 h-6 text-primary-foreground" />
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="group bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-medium transition-all">
+      {/* Destination Image */}
+      <div className="relative h-32 overflow-hidden">
+        <DestinationImage 
+          destination={trip.destination_city}
+          className="w-full h-full transition-transform duration-300 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        
+        {/* Action buttons overlay */}
+        <div className="absolute top-2 right-2 flex items-center gap-1">
           <button
-            onClick={() => onToggleFavorite(trip.id, trip.is_favorite ?? false)}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              onToggleFavorite(trip.id, trip.is_favorite ?? false);
+            }}
+            className="p-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors"
           >
             <Heart
-              className={`w-5 h-5 transition-colors ${
-                trip.is_favorite ? "text-accent fill-accent" : "text-muted-foreground"
+              className={`w-4 h-4 transition-colors ${
+                trip.is_favorite ? "text-accent fill-accent" : "text-white"
               }`}
             />
           </button>
           <button
-            onClick={() => onDelete(trip.id)}
-            className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              onDelete(trip.id);
+            }}
+            className="p-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-red-500/50 transition-colors"
           >
-            <Trash2 className="w-5 h-5" />
+            <Trash2 className="w-4 h-4 text-white" />
           </button>
+        </div>
+        
+        {/* Destination name overlay */}
+        <div className="absolute bottom-2 left-3">
+          <h3 className="font-display text-lg font-semibold text-white drop-shadow-lg">
+            {trip.destination_city}
+          </h3>
         </div>
       </div>
 
-      <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-        {trip.destination_city}
-      </h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        From {trip.boarding_city}
-      </p>
+      {/* Card content */}
+      <div className="p-4">
+        <p className="text-sm text-muted-foreground mb-3">
+          From {trip.boarding_city}
+        </p>
 
-      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-        <span className="flex items-center gap-1">
-          <Calendar className="w-4 h-4" />
-          {trip.duration} days
-        </span>
-        <span className="flex items-center gap-1">
-          <Wallet className="w-4 h-4" />
-          ₹{trip.budget.toLocaleString()}
-        </span>
-      </div>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+          <span className="flex items-center gap-1">
+            <Calendar className="w-4 h-4" />
+            {trip.duration} days
+          </span>
+          <span className="flex items-center gap-1">
+            <Wallet className="w-4 h-4" />
+            ₹{trip.budget.toLocaleString()}
+          </span>
+        </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-border">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+        <div className="flex items-center justify-between pt-3 border-t border-border">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
           trip.status === "completed" ? "bg-green-100 text-green-700" :
           trip.status === "generating" ? "bg-amber-100 text-amber-700" :
           "bg-blue-100 text-blue-700"
@@ -256,8 +274,9 @@ function TripCard({
           className="flex items-center gap-1 text-primary font-medium hover:underline"
         >
           View Details
-          <ChevronRight className="w-4 h-4" />
-        </Link>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
     </div>
   );

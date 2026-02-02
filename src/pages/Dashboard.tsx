@@ -3,318 +3,373 @@ import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { 
   Plus, 
   MapPin, 
   Calendar, 
   Wallet, 
-  Heart, 
   ChevronRight,
-  Sparkles,
   Route,
-  TrendingUp,
-  Globe,
-  Clock,
+  Briefcase,
+  IndianRupee,
   Star
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { Tables } from "@/integrations/supabase/types";
+import heroImage from "@/assets/hero-mountains.jpg";
 
 type Trip = Tables<"trips">;
 type Profile = Tables<"profiles">;
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
+// Dashboard Stats Component
+function TravelStats({ trips }: { trips: Trip[] }) {
+  const totalTrips = trips.length;
+  const totalDays = trips.reduce((sum, trip) => sum + trip.duration, 0);
+  const totalSpent = trips.reduce((sum, trip) => sum + trip.budget, 0);
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
+  const stats = [
+    { icon: Briefcase, value: totalTrips, label: "Total Trips", color: "primary" },
+    { icon: Calendar, value: totalDays, label: "Days Traveled", color: "primary" },
+    { icon: IndianRupee, value: `₹${(totalSpent / 1000).toFixed(0)}k`, label: "Total Spent", color: "primary" },
+  ];
+
+  return (
+    <div className="bg-card rounded-2xl p-5 border border-border">
+      <h3 className="font-display text-lg font-bold text-foreground mb-1">Travel Stats</h3>
+      <p className="text-sm text-muted-foreground mb-4">Hello, here's your trip progress!</p>
+      
+      <div className="grid grid-cols-3 gap-3">
+        {stats.map((stat, i) => (
+          <div key={i} className="text-center">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
+              <stat.icon className="w-5 h-5 text-primary" />
+            </div>
+            <p className="font-bold text-foreground text-lg">{stat.value}</p>
+            <p className="text-xs text-muted-foreground">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Destinations Chart Component
+function DestinationsChart({ trips }: { trips: Trip[] }) {
+  // Calculate destination percentages
+  const destinationCounts: Record<string, number> = {};
+  trips.forEach(trip => {
+    destinationCounts[trip.destination_city] = (destinationCounts[trip.destination_city] || 0) + 1;
+  });
+
+  const total = trips.length || 1;
+  const destinations = Object.entries(destinationCounts)
+    .map(([name, count]) => ({
+      name,
+      percentage: Math.round((count / total) * 100),
+    }))
+    .sort((a, b) => b.percentage - a.percentage)
+    .slice(0, 4);
+
+  const colors = ["bg-primary", "bg-accent", "bg-muted-foreground", "bg-muted"];
+
+  return (
+    <div className="bg-card rounded-2xl p-5 border border-border">
+      <h3 className="font-display text-lg font-bold text-foreground mb-4">Destinations Visited</h3>
+      
+      {/* Simple Donut representation */}
+      <div className="flex justify-center mb-4">
+        <div className="relative w-32 h-32">
+          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+            <circle
+              cx="18" cy="18" r="14"
+              fill="none"
+              stroke="hsl(var(--muted))"
+              strokeWidth="4"
+            />
+            {destinations.length > 0 && (
+              <>
+                <circle
+                  cx="18" cy="18" r="14"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="4"
+                  strokeDasharray={`${destinations[0]?.percentage || 0} ${100 - (destinations[0]?.percentage || 0)}`}
+                  strokeLinecap="round"
+                />
+                {destinations[1] && (
+                  <circle
+                    cx="18" cy="18" r="14"
+                    fill="none"
+                    stroke="hsl(var(--accent))"
+                    strokeWidth="4"
+                    strokeDasharray={`${destinations[1].percentage} ${100 - destinations[1].percentage}`}
+                    strokeDashoffset={`-${destinations[0]?.percentage || 0}`}
+                    strokeLinecap="round"
+                  />
+                )}
+              </>
+            )}
+          </svg>
+          {destinations.slice(0, 2).map((dest, i) => (
+            <span 
+              key={i}
+              className={`absolute text-xs font-semibold ${i === 0 ? 'top-2 right-0' : 'bottom-2 left-0'}`}
+              style={{ color: i === 0 ? 'hsl(var(--primary))' : 'hsl(var(--accent))' }}
+            >
+              {dest.percentage}%
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+          <span>✓ 📊</span> Destinations Visited
+        </p>
+        {destinations.map((dest, i) => (
+          <div key={dest.name} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-sm ${colors[i]}`} />
+              <span className="text-sm text-foreground">{dest.name}</span>
+            </div>
+            <span className="text-sm text-muted-foreground">{dest.percentage}%</span>
+          </div>
+        ))}
+        {destinations.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-4">No trips yet</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Trip Card Component
+function TripCard({ trip, variant = "default" }: { trip: Trip; variant?: "default" | "compact" }) {
+  const isCompact = variant === "compact";
+  
+  return (
+    <Link
+      to={`/trip/${trip.id}`}
+      className="group block bg-card rounded-xl overflow-hidden border border-border hover:border-primary/40 transition-all hover:shadow-medium"
+    >
+      {/* Placeholder image with gradient */}
+      <div className={`relative ${isCompact ? 'h-28' : 'h-36'} bg-gradient-to-br from-primary/20 via-accent/10 to-primary/5`}>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%2314b8a6%22%20fill-opacity%3D%220.1%22%20d%3D%22M0%2C100%20L50%2C20%20L100%2C100%20Z%22%2F%3E%3C%2Fsvg%3E')] bg-cover opacity-50" />
+      </div>
+      
+      <div className={`${isCompact ? 'p-3' : 'p-4'}`}>
+        <h3 className={`font-display font-bold text-foreground group-hover:text-primary transition-colors ${isCompact ? 'text-sm' : 'text-base'}`}>
+          {trip.destination_city}
+        </h3>
+        <p className="text-xs text-muted-foreground mb-2">
+          From {trip.boarding_city}
+        </p>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            {trip.duration} days
+          </span>
+          <span className="flex items-center gap-1">
+            <IndianRupee className="w-3 h-3" />
+            ₹{trip.budget.toLocaleString()}
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [recentTrips, setRecentTrips] = useState<Trip[]>([]);
-  const [totalTrips, setTotalTrips] = useState(0);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       if (!user) return;
 
-      const [profileRes, tripsRes, countRes] = await Promise.all([
+      const [profileRes, tripsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
-        supabase.from("trips").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(3),
-        supabase.from("trips").select("*", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("trips").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data);
-      if (tripsRes.data) setRecentTrips(tripsRes.data);
-      if (countRes.count) setTotalTrips(countRes.count);
+      if (tripsRes.data) setTrips(tripsRes.data);
       setLoading(false);
     }
 
     loadData();
   }, [user]);
 
-  const quickActions = [
-    {
-      icon: Plus,
-      title: "Plan New Trip",
-      description: "Start your next adventure with AI",
-      href: "/plan-trip",
-      gradient: "gradient-primary",
-      glowClass: "group-hover:shadow-glow",
-    },
-    {
-      icon: Route,
-      title: "My Trips",
-      description: "View and manage all your trips",
-      href: "/my-trips",
-      gradient: "gradient-accent",
-      glowClass: "group-hover:shadow-glow-accent",
-    },
-  ];
-
-  const stats = [
-    { icon: Globe, label: "Total Trips", value: totalTrips, color: "primary" },
-    { icon: Heart, label: "Favorites", value: recentTrips.filter(t => t.is_favorite).length, color: "accent" },
-    { icon: TrendingUp, label: "This Month", value: recentTrips.filter(t => new Date(t.created_at).getMonth() === new Date().getMonth()).length, color: "ocean" },
-  ];
-
-  const getTimeOfDay = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  };
+  const recentTrips = trips.slice(0, 3);
 
   return (
     <Layout>
-      <div className="gradient-hero min-h-screen pt-24 pb-12">
-        <div className="container mx-auto px-4">
-          {/* Welcome Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-10"
-          >
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-2">
-              <div>
-                <motion.p 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-muted-foreground font-medium mb-1"
-                >
-                  {getTimeOfDay()}
-                </motion.p>
-                <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-                  Welcome back, {profile?.full_name?.split(" ")[0] || "Traveler"}! 👋
-                </h1>
-              </div>
-              <Button asChild className="gradient-primary shadow-soft hover:shadow-glow transition-all w-fit">
-                <Link to="/plan-trip">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Trip
-                </Link>
-              </Button>
-            </div>
-            <p className="text-muted-foreground text-lg">
-              Ready to plan your next adventure?
-            </p>
-          </motion.div>
-
-          {/* Stats Cards */}
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-3 gap-4 md:gap-6 mb-10"
-          >
-            {stats.map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                variants={itemVariants}
-                className="bg-card rounded-2xl p-4 md:p-6 border border-border shadow-soft hover:shadow-medium transition-all"
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <stat.icon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
-                  </div>
-                </div>
-                <p className="font-display text-2xl md:text-3xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Quick Actions */}
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid md:grid-cols-2 gap-5 md:gap-6 mb-12"
-          >
-            {quickActions.map((action, index) => (
-              <motion.div key={index} variants={itemVariants}>
-                <Link
-                  to={action.href}
-                  className="group block p-6 md:p-8 rounded-2xl bg-card border border-border hover:border-primary/40 transition-all duration-300 card-hover"
-                >
-                  <div className="flex items-start gap-5">
-                    <motion.div 
-                      whileHover={{ scale: 1.05, rotate: 5 }}
-                      className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl ${action.gradient} flex items-center justify-center shadow-soft ${action.glowClass} transition-shadow`}
-                    >
-                      <action.icon className="w-7 h-7 md:w-8 md:h-8 text-primary-foreground" />
-                    </motion.div>
-                    <div className="flex-1">
-                      <h3 className="font-display text-xl md:text-2xl font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
-                        {action.title}
-                      </h3>
-                      <p className="text-muted-foreground">{action.description}</p>
-                    </div>
-                    <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all mt-2" />
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Recent Trips */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-10"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display text-2xl font-bold text-foreground">
-                Recent Trips
-              </h2>
-              <Link to="/my-trips" className="text-primary font-semibold hover:underline flex items-center gap-1 group">
-                View All <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            </div>
-
-            {loading ? (
-              <div className="grid md:grid-cols-3 gap-5">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-card rounded-2xl p-6 border border-border animate-pulse">
-                    <div className="h-6 bg-muted rounded w-2/3 mb-4" />
-                    <div className="h-4 bg-muted rounded w-1/2 mb-2" />
-                    <div className="h-4 bg-muted rounded w-1/3" />
-                  </div>
-                ))}
-              </div>
-            ) : recentTrips.length > 0 ? (
-              <div className="grid md:grid-cols-3 gap-5">
-                {recentTrips.map((trip, index) => (
-                  <motion.div
-                    key={trip.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Link
-                      to={`/trip/${trip.id}`}
-                      className="group block bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/40 transition-all card-hover"
-                    >
-                      {/* Gradient header */}
-                      <div className="h-24 gradient-primary relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary-foreground/10 to-transparent" />
-                        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-                          <div className="w-12 h-12 rounded-xl bg-card/90 backdrop-blur flex items-center justify-center shadow-lg">
-                            <MapPin className="w-6 h-6 text-primary" />
-                          </div>
-                          {trip.is_favorite && (
-                            <div className="w-8 h-8 rounded-full bg-card/90 backdrop-blur flex items-center justify-center">
-                              <Heart className="w-4 h-4 text-accent fill-accent" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="p-5">
-                        <h3 className="font-display text-lg font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
-                          {trip.destination_city}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          From {trip.boarding_city}
-                        </p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4 text-primary" />
-                            {trip.duration} days
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <Wallet className="w-4 h-4 text-accent" />
-                            ₹{trip.budget.toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-card rounded-2xl p-12 border border-border text-center"
-              >
-                <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-6 shadow-glow">
-                  <Sparkles className="w-10 h-10 text-primary-foreground" />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-foreground mb-3">
-                  No trips yet
-                </h3>
-                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                  Start planning your first adventure with AI-powered recommendations tailored just for you.
-                </p>
-                <Button asChild className="gradient-primary px-8 h-12 text-lg font-semibold shadow-glow">
-                  <Link to="/plan-trip">
-                    <Plus className="w-5 h-5 mr-2" />
-                    Plan Your First Trip
-                  </Link>
-                </Button>
-              </motion.div>
-            )}
-          </motion.div>
-
-          {/* Profile Completion Card */}
-          {profile && !profile.home_city && (
+      <div className="min-h-screen pt-20 pb-12">
+        {/* Welcome Banner with Background */}
+        <div className="relative overflow-hidden mb-6">
+          <div 
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${heroImage})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/50" />
+          
+          <div className="relative container mx-auto px-4 py-8">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 rounded-2xl p-6 border border-primary/20"
+              className="max-w-2xl"
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl gradient-accent flex items-center justify-center shadow-glow-accent">
-                  <Star className="w-7 h-7 text-accent-foreground" />
+              <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">
+                Welcome back, {profile?.full_name?.split(" ")[0] || "Traveler"}! 👋
+              </h1>
+              <p className="text-muted-foreground">
+                Ready to plan your next adventure?
+              </p>
+            </motion.div>
+
+            {/* Quick Action Cards */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="grid grid-cols-2 gap-4 mt-6 max-w-lg"
+            >
+              <Link
+                to="/plan-trip"
+                className="group flex items-center gap-3 p-4 rounded-xl bg-card/95 backdrop-blur border border-border hover:border-primary/40 transition-all hover:shadow-medium"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
+                  <Plus className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-display text-lg font-bold text-foreground mb-1">
-                    Complete Your Profile
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Get better AI recommendations by adding your travel preferences
-                  </p>
+                  <h3 className="font-semibold text-foreground text-sm">Plan New Trip</h3>
+                  <p className="text-xs text-muted-foreground">Start a new adventure</p>
                 </div>
-                <Button asChild variant="outline" className="border-primary/30 hover:bg-primary/10">
-                  <Link to="/profile">Complete Profile</Link>
-                </Button>
-              </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+              </Link>
+
+              <Link
+                to="/my-trips"
+                className="group flex items-center gap-3 p-4 rounded-xl bg-card/95 backdrop-blur border border-border hover:border-primary/40 transition-all hover:shadow-medium"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
+                  <Route className="w-5 h-5 text-primary group-hover:text-primary-foreground" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground text-sm">My Trips</h3>
+                  <p className="text-xs text-muted-foreground">View all your trips</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+              </Link>
             </motion.div>
-          )}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Left Column - Trips */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Recent Trips - Large Cards */}
+              <div>
+                <h2 className="font-display text-xl font-bold text-foreground mb-4">Recent Trips</h2>
+                {loading ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="bg-card rounded-xl p-4 border border-border animate-pulse">
+                        <div className="h-36 bg-muted rounded-lg mb-3" />
+                        <div className="h-4 bg-muted rounded w-2/3 mb-2" />
+                        <div className="h-3 bg-muted rounded w-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                ) : recentTrips.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {recentTrips.slice(0, 2).map((trip) => (
+                      <TripCard key={trip.id} trip={trip} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-card rounded-xl p-8 border border-border text-center">
+                    <p className="text-muted-foreground mb-4">No trips yet. Start planning!</p>
+                    <Button asChild className="gradient-primary">
+                      <Link to="/plan-trip">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Plan Your First Trip
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* More Recent Trips - Compact Cards */}
+              {trips.length > 2 && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <MapPin className="w-4 h-4 text-primary" />
+                      </div>
+                      <h2 className="font-display text-lg font-bold text-foreground">Recent Trips</h2>
+                    </div>
+                    <Link to="/my-trips" className="text-primary text-sm font-medium hover:underline flex items-center gap-1">
+                      View All <ChevronRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {trips.slice(0, 3).map((trip) => (
+                      <TripCard key={trip.id} trip={trip} variant="compact" />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Complete Profile Card */}
+              {profile && !profile.home_city && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-card rounded-xl p-5 border border-border"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <Star className="w-5 h-5 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-display font-bold text-foreground mb-1">Complete Your Profile</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Get better AI recommendations by adding your travel preferences
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Bottom Banner */}
+              <div className="relative rounded-xl overflow-hidden h-40">
+                <div 
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${heroImage})` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-transparent" />
+                <div className="relative h-full flex items-center justify-end p-6">
+                  <Button asChild className="gradient-primary">
+                    <Link to="/profile">Save Profile</Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Stats */}
+            <div className="space-y-6">
+              <TravelStats trips={trips} />
+              <DestinationsChart trips={trips} />
+            </div>
+          </div>
         </div>
       </div>
     </Layout>

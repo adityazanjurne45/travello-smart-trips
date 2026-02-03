@@ -441,6 +441,25 @@ export default function PlanTrip() {
     <Layout showFooter={false}>
       <div className="gradient-hero min-h-screen pt-24 pb-8">
         <div className="container mx-auto px-4 max-w-2xl">
+          {/* Step Progress Indicator */}
+          <div className="mb-4 text-center">
+            <span className="text-sm font-medium text-muted-foreground">
+              Step {currentStep} of 4
+            </span>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(currentStep / 4) * 100}%` }}
+                className="h-full gradient-primary rounded-full"
+                transition={{ duration: 0.3 }}
+              />
+            </div>
+          </div>
+          
           {/* Progress Steps */}
           <div className="mb-10">
             <div className="flex items-center justify-between relative">

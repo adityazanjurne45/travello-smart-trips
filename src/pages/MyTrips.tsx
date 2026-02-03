@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DestinationImage } from "@/components/trip/DestinationImage";
+import { EmptyTripsState } from "@/components/trip/EmptyTripsState";
 import { 
   MapPin, 
   Calendar, 
@@ -15,7 +16,7 @@ import {
   Plus,
   Trash2,
   ChevronRight,
-  Sparkles
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -116,33 +117,11 @@ export default function MyTrips() {
           </div>
 
           {loading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-card rounded-2xl p-6 border border-border animate-pulse">
-                  <div className="h-6 bg-muted rounded w-2/3 mb-4" />
-                  <div className="h-4 bg-muted rounded w-1/2 mb-2" />
-                  <div className="h-4 bg-muted rounded w-1/3" />
-                </div>
-              ))}
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : trips.length === 0 ? (
-            <div className="bg-card rounded-2xl p-12 border border-border text-center">
-              <div className="w-16 h-16 rounded-full bg-teal-light flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="font-display text-xl font-semibold text-foreground mb-2">
-                No trips yet
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                Start planning your first adventure with AI-powered recommendations
-              </p>
-              <Button asChild className="gradient-primary">
-                <Link to="/plan-trip">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Plan Your First Trip
-                </Link>
-              </Button>
-            </div>
+            <EmptyTripsState />
           ) : (
             <div className="space-y-8">
               {/* Favorites Section */}
@@ -263,9 +242,9 @@ function TripCard({
 
         <div className="flex items-center justify-between pt-3 border-t border-border">
           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          trip.status === "completed" ? "bg-green-100 text-green-700" :
-          trip.status === "generating" ? "bg-amber-100 text-amber-700" :
-          "bg-blue-100 text-blue-700"
+          trip.status === "completed" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+          trip.status === "generating" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
+          "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
         }`}>
           {trip.status === "generating" ? "Generating..." : trip.status}
         </span>

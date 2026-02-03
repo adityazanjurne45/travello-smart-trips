@@ -5,7 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { DestinationImage } from "@/components/trip/DestinationImage";
-import { SatelliteMap } from "@/components/trip/SatelliteMap";
+import { EnhancedMap } from "@/components/trip/EnhancedMap";
+import { AILoadingState } from "@/components/trip/AILoadingState";
 import { 
   MapPin, 
   Calendar, 
@@ -19,7 +20,6 @@ import {
   Download,
   Heart,
   Loader2,
-  Sparkles,
   Sun,
   CloudRain,
   Map
@@ -93,7 +93,6 @@ export default function TripDetails() {
       if (data) {
         setTrip(data);
         
-        // If no recommendations yet, generate them
         if (!data.recommendations && data.status === "generating") {
           generateRecommendations(data);
         }
@@ -123,7 +122,6 @@ export default function TripDetails() {
 
       const { recommendations, itinerary } = response.data;
 
-      // Update the trip with recommendations
       const { data: updatedTrip, error: updateError } = await supabase
         .from("trips")
         .update({
@@ -143,7 +141,6 @@ export default function TripDetails() {
       console.error("Error generating recommendations:", error);
       toast.error("Failed to generate trip plan. Please try again.");
       
-      // Update status to show error
       await supabase
         .from("trips")
         .update({ status: "planned" })
@@ -248,28 +245,15 @@ export default function TripDetails() {
             </div>
           </div>
 
-          {/* Generating State */}
+          {/* Generating State with AI Loading Animation */}
           {(generating || trip.status === "generating") && !recommendations && (
-            <div className="bg-card rounded-2xl p-12 border border-border text-center">
-              <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center mx-auto mb-6 shadow-glow">
-                <Sparkles className="w-10 h-10 text-primary-foreground animate-pulse" />
-              </div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-2">
-                Generating Your Perfect Trip Plan
-              </h2>
-              <p className="text-muted-foreground mb-4">
-                Our AI is analyzing destinations, hotels, and transport options based on your preferences...
-              </p>
-              <div className="flex justify-center">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            </div>
+            <AILoadingState />
           )}
 
           {/* Recommendations Content */}
           {recommendations && (
             <div className="space-y-8">
-              {/* Interactive Satellite Map */}
+              {/* Interactive Enhanced Map */}
               <div className="bg-card rounded-2xl p-6 border border-border">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
@@ -278,12 +262,12 @@ export default function TripDetails() {
                   <div>
                     <h2 className="font-display text-xl font-semibold">Interactive Trip Map</h2>
                     <p className="text-sm text-muted-foreground">
-                      Explore hotels and attractions on a satellite view
+                      Explore hotels and attractions with custom icons
                     </p>
                   </div>
                 </div>
                 
-                <SatelliteMap
+                <EnhancedMap
                   boardingCity={trip.boarding_city}
                   destinationCity={trip.destination_city}
                   hotels={recommendations.hotels}
@@ -292,14 +276,13 @@ export default function TripDetails() {
                 />
               </div>
 
-
               {/* Weather & Warnings */}
               <div className="grid md:grid-cols-2 gap-6">
                 {recommendations.weather && (
                   <div className="bg-card rounded-2xl p-6 border border-border">
                     <div className="flex items-center gap-3 mb-4">
                       {recommendations.weather.condition?.toLowerCase().includes("rain") ? (
-                        <CloudRain className="w-8 h-8 text-ocean" />
+                        <CloudRain className="w-8 h-8 text-primary" />
                       ) : (
                         <Sun className="w-8 h-8 text-accent" />
                       )}
@@ -343,15 +326,15 @@ export default function TripDetails() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     {recommendations.touristPlaces.map((place, i) => (
-                      <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border">
+                      <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors">
                         <h4 className="font-semibold text-foreground mb-2">{place.name}</h4>
                         <p className="text-sm text-muted-foreground mb-3">{place.description}</p>
                         <div className="flex flex-wrap gap-2 text-xs">
-                          <span className="px-2 py-1 rounded-full bg-teal-light text-primary">
+                          <span className="px-2 py-1 rounded-full bg-primary/10 text-primary">
                             <Clock className="w-3 h-3 inline mr-1" />
                             {place.visitDuration}
                           </span>
-                          <span className="px-2 py-1 rounded-full bg-coral-light text-accent">
+                          <span className="px-2 py-1 rounded-full bg-accent/10 text-accent">
                             ₹{place.entryFee} entry
                           </span>
                         </div>
@@ -373,7 +356,7 @@ export default function TripDetails() {
 
                   <div className="grid md:grid-cols-3 gap-4">
                     {recommendations.hotels.map((hotel, i) => (
-                      <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border">
+                      <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors">
                         <h4 className="font-semibold text-foreground mb-1">{hotel.name}</h4>
                         <p className="text-sm text-muted-foreground mb-2">{hotel.location}</p>
                         <div className="flex items-center gap-2 mb-3">
@@ -407,7 +390,7 @@ export default function TripDetails() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     {recommendations.transport.map((option, i) => (
-                      <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border flex items-start gap-4">
+                      <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border flex items-start gap-4 hover:border-primary/30 transition-colors">
                         <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
                           <Car className="w-5 h-5 text-secondary-foreground" />
                         </div>
@@ -442,19 +425,19 @@ export default function TripDetails() {
 
                   <div className="space-y-4">
                     {itinerary.days.map((day) => (
-                      <div key={day.day} className="p-4 rounded-xl bg-muted/50 border border-border">
+                      <div key={day.day} className="p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors">
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-semibold text-foreground">
                             Day {day.day}: {day.title}
                           </h4>
                           <span className="text-sm text-primary font-medium">
-                            ₹{day.estimatedCost.toLocaleString()}
+                            ₹{day.estimatedCost?.toLocaleString()}
                           </span>
                         </div>
                         <ul className="space-y-2">
-                          {day.activities.map((activity, i) => (
-                            <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          {day.activities?.map((activity, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium mt-0.5">
                                 {i + 1}
                               </span>
                               {activity}
@@ -466,22 +449,6 @@ export default function TripDetails() {
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Retry Button if no recommendations */}
-          {!recommendations && !generating && trip.status !== "generating" && (
-            <div className="bg-card rounded-2xl p-12 border border-border text-center">
-              <h2 className="font-display text-xl font-bold text-foreground mb-4">
-                No recommendations generated yet
-              </h2>
-              <Button 
-                onClick={() => generateRecommendations(trip)}
-                className="gradient-primary"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Generate Trip Plan
-              </Button>
             </div>
           )}
         </div>

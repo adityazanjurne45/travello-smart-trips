@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Loader2, 
   User, 
@@ -26,7 +26,8 @@ import {
   Users,
   Clock,
   Hotel,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle2
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -34,23 +35,27 @@ const travelStyles = ["solo", "couple", "family", "group"] as const;
 const accommodationTypes = ["budget", "mid-range", "luxury", "hostel", "homestay", "resort"] as const;
 const transportTypes = ["bike", "car", "public", "flight", "train"] as const;
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
+const getTravelStyleLabel = (style: string) => {
+  const labels: Record<string, { label: string; emoji: string }> = {
+    solo: { label: "Solo Explorer", emoji: "🎒" },
+    couple: { label: "Romantic Getaway", emoji: "💑" },
+    family: { label: "Family Adventure", emoji: "👨‍👩‍👧‍👦" },
+    group: { label: "Group Travel", emoji: "👥" },
+  };
+  return labels[style] || { label: style, emoji: "✈️" };
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
+const getBudgetLabel = (min: number, max: number) => {
+  if (max < 20000) return { label: "Budget Traveler", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" };
+  if (max < 50000) return { label: "Mid-Range Explorer", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" };
+  return { label: "Luxury Seeker", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" };
 };
 
 export default function Profile() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -106,7 +111,6 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Preview immediately
     const previewUrl = URL.createObjectURL(file);
     setAvatarUrl(previewUrl);
 
@@ -130,9 +134,9 @@ export default function Profile() {
         .eq("user_id", user.id);
 
       setAvatarUrl(publicUrl);
-      toast.success("Avatar updated successfully");
+      toast.success("Profile photo updated!");
     } catch (error) {
-      toast.error("Failed to upload avatar");
+      toast.error("Failed to upload photo. Please try again.");
       setAvatarUrl(null);
     }
   };
@@ -153,7 +157,9 @@ export default function Profile() {
       return;
     }
 
-    toast.success("Profile updated successfully");
+    setSaved(true);
+    toast.success("Profile saved successfully!");
+    setTimeout(() => setSaved(false), 3000);
   };
 
   if (loading) {
@@ -165,6 +171,9 @@ export default function Profile() {
       </Layout>
     );
   }
+
+  const travelStyleInfo = getTravelStyleLabel(formData.travel_style);
+  const budgetInfo = getBudgetLabel(formData.min_budget, formData.max_budget);
 
   return (
     <Layout>
@@ -184,14 +193,37 @@ export default function Profile() {
             </p>
           </motion.div>
 
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-6"
-          >
+          <div className="space-y-6">
+            {/* Travel Preference Summary Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-6 border border-primary/20"
+            >
+              <h3 className="font-semibold text-foreground mb-4">Your Travel Style</h3>
+              <div className="flex flex-wrap gap-3">
+                <span className="px-4 py-2 rounded-full bg-card border border-border text-sm font-medium">
+                  {travelStyleInfo.emoji} {travelStyleInfo.label}
+                </span>
+                <span className={`px-4 py-2 rounded-full text-sm font-medium ${budgetInfo.color}`}>
+                  💰 {budgetInfo.label}
+                </span>
+                <span className="px-4 py-2 rounded-full bg-card border border-border text-sm font-medium">
+                  🏨 {formData.accommodation_preference}
+                </span>
+                <span className="px-4 py-2 rounded-full bg-card border border-border text-sm font-medium">
+                  🚗 {formData.transportation_preference}
+                </span>
+              </div>
+            </motion.div>
+
             {/* Avatar & Personal Info */}
-            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft"
+            >
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
                   <User className="w-6 h-6 text-primary-foreground" />
@@ -292,7 +324,12 @@ export default function Profile() {
             </motion.div>
 
             {/* Travel Preferences */}
-            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft"
+            >
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
                   <MapPin className="w-6 h-6 text-primary-foreground" />
@@ -317,10 +354,10 @@ export default function Profile() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="solo">Solo Traveler</SelectItem>
-                      <SelectItem value="couple">Couple</SelectItem>
-                      <SelectItem value="family">Family</SelectItem>
-                      <SelectItem value="group">Group</SelectItem>
+                      <SelectItem value="solo">🎒 Solo Traveler</SelectItem>
+                      <SelectItem value="couple">💑 Couple</SelectItem>
+                      <SelectItem value="family">👨‍👩‍👧‍👦 Family</SelectItem>
+                      <SelectItem value="group">👥 Group</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -348,7 +385,12 @@ export default function Profile() {
             </motion.div>
 
             {/* Budget */}
-            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft"
+            >
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 rounded-xl gradient-accent flex items-center justify-center">
                   <Wallet className="w-6 h-6 text-accent-foreground" />
@@ -387,7 +429,12 @@ export default function Profile() {
             </motion.div>
 
             {/* Accommodation & Transport */}
-            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft"
+            >
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
                   <Hotel className="w-6 h-6 text-primary-foreground" />
@@ -412,12 +459,12 @@ export default function Profile() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="budget">Budget</SelectItem>
-                      <SelectItem value="mid-range">Mid-Range</SelectItem>
-                      <SelectItem value="luxury">Luxury</SelectItem>
-                      <SelectItem value="hostel">Hostel</SelectItem>
-                      <SelectItem value="homestay">Homestay</SelectItem>
-                      <SelectItem value="resort">Resort</SelectItem>
+                      <SelectItem value="budget">💵 Budget</SelectItem>
+                      <SelectItem value="mid-range">🏨 Mid-Range</SelectItem>
+                      <SelectItem value="luxury">✨ Luxury</SelectItem>
+                      <SelectItem value="hostel">🎒 Hostel</SelectItem>
+                      <SelectItem value="homestay">🏡 Homestay</SelectItem>
+                      <SelectItem value="resort">🏝️ Resort</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -434,95 +481,87 @@ export default function Profile() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bike">Bike</SelectItem>
-                      <SelectItem value="car">Car</SelectItem>
-                      <SelectItem value="public">Public Transport</SelectItem>
-                      <SelectItem value="flight">Flight</SelectItem>
-                      <SelectItem value="train">Train</SelectItem>
+                      <SelectItem value="bike">🏍️ Bike</SelectItem>
+                      <SelectItem value="car">🚗 Car</SelectItem>
+                      <SelectItem value="public">🚌 Public Transport</SelectItem>
+                      <SelectItem value="flight">✈️ Flight</SelectItem>
+                      <SelectItem value="train">🚆 Train</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="mt-6 p-4 bg-muted/30 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-primary" />
-                  <div>
-                    <Label className="font-semibold">Traffic Sensitive</Label>
-                    <p className="text-sm text-muted-foreground">Optimize routes based on traffic conditions</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={formData.traffic_sensitive}
-                  onCheckedChange={(v) => setFormData({ ...formData, traffic_sensitive: v })}
-                />
-              </div>
-            </motion.div>
-
-            {/* Food & Language */}
-            <motion.div variants={itemVariants} className="bg-card rounded-2xl p-6 md:p-8 border border-border shadow-soft">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-                  <Utensils className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h2 className="font-display text-xl font-bold">Food & Language</h2>
-                  <p className="text-sm text-muted-foreground">Dietary and language preferences</p>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  <Label htmlFor="food" className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2">
                     <Utensils className="w-4 h-4 text-muted-foreground" />
                     Food Preference
                   </Label>
                   <Input
-                    id="food"
                     value={formData.food_preference}
                     onChange={(e) => setFormData({ ...formData, food_preference: e.target.value })}
-                    placeholder="Vegetarian, Vegan, Non-veg, etc."
+                    placeholder="Vegetarian, Non-veg, Vegan..."
                     className="h-12"
                   />
                 </div>
                 <div className="space-y-3">
-                  <Label htmlFor="language" className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2">
                     <Languages className="w-4 h-4 text-muted-foreground" />
                     Language Preference
                   </Label>
                   <Input
-                    id="language"
                     value={formData.language_preference}
                     onChange={(e) => setFormData({ ...formData, language_preference: e.target.value })}
-                    placeholder="English, Hindi, etc."
+                    placeholder="English, Hindi..."
                     className="h-12"
+                  />
+                </div>
+
+                <div className="md:col-span-2 flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                    <div>
+                      <p className="font-medium text-foreground">Traffic Sensitive</p>
+                      <p className="text-sm text-muted-foreground">Avoid heavy traffic routes</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.traffic_sensitive}
+                    onCheckedChange={(checked) => setFormData({ ...formData, traffic_sensitive: checked })}
                   />
                 </div>
               </div>
             </motion.div>
 
             {/* Save Button */}
-            <motion.div variants={itemVariants} className="flex justify-end pt-4">
-              <Button 
-                onClick={handleSave} 
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Button
+                onClick={handleSave}
                 disabled={saving}
                 size="lg"
-                className="gradient-primary px-10 h-14 text-lg font-semibold shadow-glow"
+                className="w-full h-14 text-lg gradient-primary shadow-glow"
               >
                 {saving ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Saving...
                   </>
+                ) : saved ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    Saved Successfully!
+                  </>
                 ) : (
                   <>
                     <Save className="w-5 h-5 mr-2" />
-                    Save Changes
+                    Save Profile
                   </>
                 )}
               </Button>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </Layout>

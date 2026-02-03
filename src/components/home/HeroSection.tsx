@@ -1,27 +1,12 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { MapPin, Calendar, Wallet, ArrowRight, Navigation } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-mountains.jpg";
 
 export function HeroSection() {
-  const navigate = useNavigate();
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 500], [0, 150]);
-  
-  const [formData, setFormData] = useState({
-    from: "",
-    to: "",
-    days: "",
-    budget: "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate("/login");
-  };
 
   return (
     <section className="relative min-h-[85vh] overflow-hidden">
@@ -35,121 +20,87 @@ export function HeroSection() {
           alt="Mountain highway at sunset"
           className="w-full h-[120%] object-cover"
         />
-        {/* Gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background/80" />
+        {/* Stronger dark gradient overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent" />
       </motion.div>
 
       {/* Content */}
-      <div className="relative z-20 container mx-auto px-4 pt-28 md:pt-32 pb-16">
-        {/* Main Headline */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-center mb-6 text-foreground"
-        >
-          Your Smarter. Travel Better.
-        </motion.h1>
-
-        {/* Tagline Pill */}
+      <div className="relative z-20 container mx-auto px-4 pt-32 md:pt-40 pb-16">
+        {/* AI Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="flex justify-center mb-10"
+          transition={{ duration: 0.5 }}
+          className="flex justify-center mb-6"
         >
-          <div className="inline-block px-6 py-3 rounded-full bg-primary/90 backdrop-blur-sm">
-            <p className="text-sm md:text-base text-primary-foreground text-center font-medium">
-              AI-powered, budget-friendly, and traffic-aware trip planning tailored to your unique travel style.
-            </p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-white">AI-Powered Trip Planning</span>
           </div>
         </motion.div>
 
-        {/* Quick Search Form */}
+        {/* Main Headline - High contrast white text */}
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+          className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-center mb-6 text-white drop-shadow-2xl"
+        >
+          Plan Your Perfect Trip
+          <br />
+          <span className="text-primary">With AI</span>
+        </motion.h1>
+
+        {/* Subtext - Honest statement */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-center text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-10 drop-shadow-lg"
+        >
+          Smart AI-powered trip planning made simple. Get personalized itineraries, 
+          budget-friendly options, and local recommendations in seconds.
+        </motion.p>
+
+        {/* Single CTA Button */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="max-w-3xl mx-auto"
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="flex justify-center"
         >
-          <form onSubmit={handleSubmit}>
-            <div className="bg-card/95 backdrop-blur-xl rounded-2xl border border-border p-4 md:p-6 shadow-elevated">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
-                {/* From */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">From</label>
-                  <div className="relative">
-                    <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-                    <Input
-                      placeholder="Departure city"
-                      value={formData.from}
-                      onChange={(e) => setFormData({ ...formData, from: e.target.value })}
-                      className="pl-10 h-11 bg-background border-border rounded-xl text-sm"
-                    />
-                  </div>
-                </div>
+          <Button
+            asChild
+            size="lg"
+            className="h-14 px-10 text-lg font-semibold gradient-primary hover:opacity-90 transition-all rounded-xl group shadow-glow"
+          >
+            <Link to="/login">
+              Start Planning Free
+              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </Button>
+        </motion.div>
 
-                {/* To */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">To</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-                    <Input
-                      placeholder="Destination city"
-                      value={formData.to}
-                      onChange={(e) => setFormData({ ...formData, to: e.target.value })}
-                      className="pl-10 h-11 bg-background border-border rounded-xl text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Duration */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Duration</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      placeholder="Days"
-                      min="1"
-                      max="30"
-                      value={formData.days}
-                      onChange={(e) => setFormData({ ...formData, days: e.target.value })}
-                      className="pl-10 h-11 bg-background border-border rounded-xl text-sm"
-                    />
-                  </div>
-                </div>
-
-                {/* Budget */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Budget</label>
-                  <div className="relative">
-                    <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      placeholder="₹ Amount"
-                      min="1000"
-                      value={formData.budget}
-                      onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                      className="pl-10 h-11 bg-background border-border rounded-xl text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-center">
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="px-8 h-12 text-base font-semibold gradient-primary hover:opacity-90 transition-all rounded-xl group"
-                >
-                  Plan My Trip
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
-            </div>
-          </form>
+        {/* Trust indicators - Honest statement */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="flex flex-wrap justify-center gap-6 mt-12 text-white/70 text-sm"
+        >
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary" />
+            No credit card required
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary" />
+            Instant AI recommendations
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary" />
+            Budget-aware planning
+          </span>
         </motion.div>
       </div>
     </section>

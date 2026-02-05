@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { DestinationImage } from "@/components/trip/DestinationImage";
+import { PlaceImageGallery } from "@/components/trip/PlaceImageGallery";
 import { EnhancedMap } from "@/components/trip/EnhancedMap";
 import { AILoadingState } from "@/components/trip/AILoadingState";
 import { 
@@ -326,7 +327,14 @@ export default function TripDetails() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     {recommendations.touristPlaces.map((place, i) => (
-                      <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors">
+                      <div key={i} className="rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors overflow-hidden">
+                        <PlaceImageGallery
+                          placeName={`${place.name} ${trip.destination_city}`}
+                          className="h-32"
+                          variant="single"
+                          showAttribution={false}
+                        />
+                        <div className="p-4">
                         <h4 className="font-semibold text-foreground mb-2">{place.name}</h4>
                         <p className="text-sm text-muted-foreground mb-3">{place.description}</p>
                         <div className="flex flex-wrap gap-2 text-xs">
@@ -338,9 +346,13 @@ export default function TripDetails() {
                             ₹{place.entryFee} entry
                           </span>
                         </div>
+                        </div>
                       </div>
                     ))}
                   </div>
+                  <p className="text-[10px] text-muted-foreground text-center mt-4">
+                    Images © Wikimedia Commons
+                  </p>
                 </div>
               )}
 
@@ -356,7 +368,14 @@ export default function TripDetails() {
 
                   <div className="grid md:grid-cols-3 gap-4">
                     {recommendations.hotels.map((hotel, i) => (
-                      <div key={i} className="p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors">
+                      <div key={i} className="rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors overflow-hidden">
+                        <PlaceImageGallery
+                          placeName={`${hotel.name} hotel ${trip.destination_city}`}
+                          className="h-28"
+                          variant="single"
+                          showAttribution={false}
+                        />
+                        <div className="p-4">
                         <h4 className="font-semibold text-foreground mb-1">{hotel.name}</h4>
                         <p className="text-sm text-muted-foreground mb-2">{hotel.location}</p>
                         <div className="flex items-center gap-2 mb-3">
@@ -372,9 +391,13 @@ export default function TripDetails() {
                             </span>
                           ))}
                         </div>
+                        </div>
                       </div>
                     ))}
                   </div>
+                  <p className="text-[10px] text-muted-foreground text-center mt-4">
+                    Images © Wikimedia Commons
+                  </p>
                 </div>
               )}
 

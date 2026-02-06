@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -25,8 +26,9 @@ import {
 const steps = [
   { id: 1, title: "Departure", description: "Where are you starting?", icon: Navigation },
   { id: 2, title: "Destination", description: "Where do you want to go?", icon: MapPin },
-  { id: 3, title: "Duration", description: "How long is your trip?", icon: Calendar },
-  { id: 4, title: "Budget", description: "What's your budget?", icon: Wallet },
+  { id: 3, title: "Dates", description: "When are you traveling?", icon: Calendar },
+  { id: 4, title: "Duration", description: "How long is your trip?", icon: Calendar },
+  { id: 5, title: "Budget", description: "What's your budget?", icon: Wallet },
 ];
 
 const popularCities = [
@@ -47,6 +49,8 @@ export default function PlanTrip() {
     destination_city: "",
     duration: 3,
     budget: 20000,
+    start_date: undefined as Date | undefined,
+    end_date: undefined as Date | undefined,
   });
 
   const [showBoardingSuggestions, setShowBoardingSuggestions] = useState(false);
@@ -64,6 +68,8 @@ export default function PlanTrip() {
     );
   };
 
+  const totalSteps = 5;
+
   const nextStep = () => {
     if (currentStep === 1 && !formData.boarding_city.trim()) {
       toast.error("Please enter your departure city");
@@ -73,7 +79,7 @@ export default function PlanTrip() {
       toast.error("Please enter your destination");
       return;
     }
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+    if (currentStep < totalSteps) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
@@ -92,6 +98,8 @@ export default function PlanTrip() {
         destination_city: formData.destination_city,
         duration: formData.duration,
         budget: formData.budget,
+        start_date: formData.start_date ? formData.start_date.toISOString().split("T")[0] : null,
+        end_date: formData.end_date ? formData.end_date.toISOString().split("T")[0] : null,
         status: "generating",
       })
       .select()
@@ -293,6 +301,55 @@ export default function PlanTrip() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center mb-6">
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", delay: 0.1 }}
+                className="w-20 h-20 rounded-2xl gradient-accent flex items-center justify-center mx-auto mb-5 shadow-glow-accent"
+              >
+                <Calendar className="w-10 h-10 text-accent-foreground" />
+              </motion.div>
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">
+                When are you traveling?
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                Select your travel start date (optional)
+              </p>
+            </div>
+
+            <div className="bg-muted/30 rounded-2xl p-6 flex flex-col items-center">
+              <CalendarComponent
+                mode="single"
+                selected={formData.start_date}
+                onSelect={(date) => setFormData({ ...formData, start_date: date })}
+                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                className="rounded-xl border border-border bg-card"
+              />
+              {formData.start_date && (
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 text-sm text-primary font-medium"
+                >
+                  ✓ Starting on {formData.start_date.toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                </motion.p>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                You can skip this step — date is optional
+              </p>
+            </div>
+          </motion.div>
+        );
+
+      case 4:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
             className="space-y-8"
           >
             <div className="text-center mb-8">
@@ -355,7 +412,7 @@ export default function PlanTrip() {
           </motion.div>
         );
 
-      case 4:
+      case 5:
         const budgetInfo = getBudgetLabel(formData.budget);
         return (
           <motion.div
@@ -444,7 +501,7 @@ export default function PlanTrip() {
           {/* Step Progress Indicator */}
           <div className="mb-4 text-center">
             <span className="text-sm font-medium text-muted-foreground">
-              Step {currentStep} of 4
+              Step {currentStep} of {totalSteps}
             </span>
           </div>
           
@@ -453,7 +510,7 @@ export default function PlanTrip() {
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${(currentStep / 4) * 100}%` }}
+                animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
                 className="h-full gradient-primary rounded-full"
                 transition={{ duration: 0.3 }}
               />
@@ -470,7 +527,7 @@ export default function PlanTrip() {
                     animate={{ 
                       scale: currentStep === step.id ? 1.1 : 1,
                     }}
-                    className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                    className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                       currentStep > step.id
                         ? "gradient-primary shadow-glow"
                         : currentStep === step.id
@@ -479,9 +536,9 @@ export default function PlanTrip() {
                     }`}
                   >
                     {currentStep > step.id ? (
-                      <Check className="w-6 h-6 text-primary-foreground" />
+                      <Check className="w-5 h-5 text-primary-foreground" />
                     ) : (
-                      <step.icon className={`w-5 h-5 md:w-6 md:h-6 ${currentStep === step.id ? "text-primary-foreground" : "text-muted-foreground"}`} />
+                      <step.icon className={`w-4 h-4 md:w-5 md:h-5 ${currentStep === step.id ? "text-primary-foreground" : "text-muted-foreground"}`} />
                     )}
                   </motion.div>
                   <span className={`text-xs md:text-sm mt-2 font-semibold text-center ${currentStep === step.id ? "text-primary" : "text-muted-foreground"}`}>
@@ -493,7 +550,7 @@ export default function PlanTrip() {
               <div className="absolute top-6 md:top-7 left-0 right-0 h-1 bg-border -z-0 mx-6">
                 <motion.div
                   initial={{ width: "0%" }}
-                  animate={{ width: `${((currentStep - 1) / 3) * 100}%` }}
+                  animate={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
                   className="h-full gradient-primary rounded-full"
                   transition={{ duration: 0.3 }}
                 />
@@ -522,7 +579,7 @@ export default function PlanTrip() {
                 Back
               </Button>
 
-              {currentStep < 4 ? (
+              {currentStep < totalSteps ? (
                 <Button onClick={nextStep} className="gradient-primary gap-2 h-12 px-8 rounded-xl shadow-glow">
                   Next
                   <ChevronRight className="w-4 h-4" />

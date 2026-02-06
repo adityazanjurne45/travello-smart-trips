@@ -4,6 +4,7 @@ import { MapPin, Menu, X, User, LogOut, Compass } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
+import { NotificationPanel } from "@/components/notifications/NotificationPanel";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,6 +80,8 @@ export function Navbar() {
           {/* Right Side - Auth/Avatar */}
           <div className="hidden md:flex items-center gap-4 shrink-0">
             {user ? (
+              <>
+              <NotificationPanel />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-11 w-11 rounded-full p-0 hover:ring-2 hover:ring-primary/20 transition-all">
@@ -112,6 +115,7 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </>
             ) : (
               <>
                 <Link

@@ -12,6 +12,7 @@ import { OverviewTab } from "@/components/trip/OverviewTab";
 import { DayByDayTab } from "@/components/trip/DayByDayTab";
 import { BookTicketsTab } from "@/components/trip/BookTicketsTab";
 import { DestinationTimeCard } from "@/components/trip/DestinationTimeCard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { 
   Calendar, Wallet, ArrowLeft, Download, Heart, Loader2, Map, 
   Eye, CalendarDays, Ticket, MapPin
@@ -192,24 +193,31 @@ export default function TripDetails() {
               </TabsContent>
 
               <TabsContent value="map">
-                <div className="bg-card rounded-2xl p-6 border border-border">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-                      <Map className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <div>
-                      <h2 className="font-display text-xl font-semibold">Interactive Trip Map</h2>
-                      <p className="text-sm text-muted-foreground">Explore hotels and attractions with custom icons</p>
-                    </div>
+                <ErrorBoundary fallback={
+                  <div className="bg-card rounded-2xl p-6 border border-border text-center py-12">
+                    <MapPin className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">Map could not be loaded.</p>
                   </div>
-                  <EnhancedMap
-                    boardingCity={trip.boarding_city}
-                    destinationCity={trip.destination_city}
-                    hotels={recommendations.hotels}
-                    attractions={recommendations.touristPlaces}
-                    className="h-[400px] md:h-[500px]"
-                  />
-                </div>
+                }>
+                  <div className="bg-card rounded-2xl p-6 border border-border">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+                        <Map className="w-5 h-5 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <h2 className="font-display text-xl font-semibold">Interactive Trip Map</h2>
+                        <p className="text-sm text-muted-foreground">Explore hotels and attractions with custom icons</p>
+                      </div>
+                    </div>
+                    <EnhancedMap
+                      boardingCity={trip.boarding_city}
+                      destinationCity={trip.destination_city}
+                      hotels={recommendations.hotels}
+                      attractions={recommendations.touristPlaces}
+                      className="h-[400px] md:h-[500px]"
+                    />
+                  </div>
+                </ErrorBoundary>
               </TabsContent>
 
               <TabsContent value="itinerary">

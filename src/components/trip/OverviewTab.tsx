@@ -98,7 +98,7 @@ export function OverviewTab({ recommendations, destinationCity }: OverviewTabPro
                     <span className="px-2 py-1 rounded-full bg-primary/10 text-primary">
                       <Clock className="w-3 h-3 inline mr-1" />{place.visitDuration}
                     </span>
-                    <span className="px-2 py-1 rounded-full bg-accent/10 text-accent">₹{place.entryFee} entry</span>
+                    <span className="px-2 py-1 rounded-full bg-accent/10 text-accent">₹{place.entryFee ?? 0} entry</span>
                   </div>
                 </div>
               </div>
@@ -125,7 +125,7 @@ export function OverviewTab({ recommendations, destinationCity }: OverviewTabPro
                   <h4 className="font-semibold text-foreground mb-1">{hotel.name}</h4>
                   <p className="text-sm text-muted-foreground mb-2">{hotel.location}</p>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg font-bold text-primary">₹{hotel.pricePerNight.toLocaleString()}</span>
+                    <span className="text-lg font-bold text-primary">₹{(hotel.pricePerNight ?? 0).toLocaleString()}</span>
                     <span className="text-sm text-muted-foreground">/night</span>
                   </div>
                   <div className="flex flex-wrap gap-1">
@@ -159,7 +159,7 @@ export function OverviewTab({ recommendations, destinationCity }: OverviewTabPro
                 <div className="flex-1">
                   <h4 className="font-semibold text-foreground capitalize">{option.type}</h4>
                   <p className="text-sm text-muted-foreground">{option.duration}</p>
-                  <p className="text-primary font-medium mt-1">₹{option.estimatedCost.toLocaleString()}</p>
+                  <p className="text-primary font-medium mt-1">₹{(option.estimatedCost ?? 0).toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground mt-1">{option.recommendation}</p>
                 </div>
               </div>

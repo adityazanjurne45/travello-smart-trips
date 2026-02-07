@@ -12,10 +12,18 @@ import { OverviewTab } from "@/components/trip/OverviewTab";
 import { DayByDayTab } from "@/components/trip/DayByDayTab";
 import { BookTicketsTab } from "@/components/trip/BookTicketsTab";
 import { DestinationTimeCard } from "@/components/trip/DestinationTimeCard";
+import { ExpenseTracker } from "@/components/trip/ExpenseTracker";
+import { PackingChecklist } from "@/components/trip/PackingChecklist";
+import { TripRating } from "@/components/trip/TripRating";
+import { TravelerEssentials } from "@/components/trip/TravelerEssentials";
+import { LanguageCultureTips } from "@/components/trip/LanguageCultureTips";
+import { ShareTrip } from "@/components/trip/ShareTrip";
+import { TripAssistant } from "@/components/trip/TripAssistant";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { 
   Calendar, Wallet, ArrowLeft, Download, Heart, Loader2, Map, 
-  Eye, CalendarDays, Ticket, MapPin
+  Eye, CalendarDays, Ticket, MapPin, Shield, Luggage, DollarSign, 
+  Languages, Bot
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -157,14 +165,23 @@ export default function TripDetails() {
                 <Button variant="secondary" size="sm" onClick={toggleFavorite} className="bg-white/20 backdrop-blur-sm hover:bg-white/30 border-0">
                   <Heart className={`w-4 h-4 ${trip.is_favorite ? "fill-accent text-accent" : "text-white"}`} />
                 </Button>
-                <Button variant="secondary" size="sm" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 border-0">
-                  <Download className="w-4 h-4 text-white" />
-                </Button>
               </div>
             </div>
 
-            {/* Destination Time */}
-            <DestinationTimeCard destinationCity={trip.destination_city} />
+            {/* Destination Time + Share */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <DestinationTimeCard destinationCity={trip.destination_city} />
+              </div>
+              <ShareTrip
+                tripId={trip.id}
+                boardingCity={trip.boarding_city}
+                destinationCity={trip.destination_city}
+                duration={trip.duration}
+                budget={trip.budget}
+                startDate={trip.start_date}
+              />
+            </div>
           </div>
 
           {/* AI Loading */}
@@ -174,22 +191,34 @@ export default function TripDetails() {
           {recommendations && (
             <Tabs defaultValue="overview" className="space-y-6">
               <TabsList className="w-full h-auto flex flex-wrap gap-1 bg-card border border-border p-1.5 rounded-xl">
-                <TabsTrigger value="overview" className="flex-1 min-w-[100px] gap-2 py-2.5 rounded-lg data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow">
-                  <Eye className="w-4 h-4" /> Overview
+                <TabsTrigger value="overview" className="flex-1 min-w-[80px] gap-1.5 py-2 rounded-lg text-xs sm:text-sm data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow">
+                  <Eye className="w-3.5 h-3.5" /> Overview
                 </TabsTrigger>
-                <TabsTrigger value="map" className="flex-1 min-w-[100px] gap-2 py-2.5 rounded-lg data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow">
-                  <Map className="w-4 h-4" /> Map
+                <TabsTrigger value="map" className="flex-1 min-w-[80px] gap-1.5 py-2 rounded-lg text-xs sm:text-sm data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow">
+                  <Map className="w-3.5 h-3.5" /> Map
                 </TabsTrigger>
-                <TabsTrigger value="itinerary" className="flex-1 min-w-[100px] gap-2 py-2.5 rounded-lg data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow">
-                  <CalendarDays className="w-4 h-4" /> Day-by-Day
+                <TabsTrigger value="itinerary" className="flex-1 min-w-[80px] gap-1.5 py-2 rounded-lg text-xs sm:text-sm data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow">
+                  <CalendarDays className="w-3.5 h-3.5" /> Day-by-Day
                 </TabsTrigger>
-                <TabsTrigger value="book" className="flex-1 min-w-[100px] gap-2 py-2.5 rounded-lg data-[state=active]:gradient-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-glow-accent">
-                  <Ticket className="w-4 h-4" /> Book Tickets
+                <TabsTrigger value="essentials" className="flex-1 min-w-[80px] gap-1.5 py-2 rounded-lg text-xs sm:text-sm data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow">
+                  <Shield className="w-3.5 h-3.5" /> Essentials
+                </TabsTrigger>
+                <TabsTrigger value="expenses" className="flex-1 min-w-[80px] gap-1.5 py-2 rounded-lg text-xs sm:text-sm data-[state=active]:gradient-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow">
+                  <DollarSign className="w-3.5 h-3.5" /> Budget
+                </TabsTrigger>
+                <TabsTrigger value="packing" className="flex-1 min-w-[80px] gap-1.5 py-2 rounded-lg text-xs sm:text-sm data-[state=active]:gradient-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-glow-accent">
+                  <Luggage className="w-3.5 h-3.5" /> Packing
+                </TabsTrigger>
+                <TabsTrigger value="book" className="flex-1 min-w-[80px] gap-1.5 py-2 rounded-lg text-xs sm:text-sm data-[state=active]:gradient-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-glow-accent">
+                  <Ticket className="w-3.5 h-3.5" /> Book
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview">
-                <OverviewTab recommendations={recommendations} destinationCity={trip.destination_city} />
+                <div className="space-y-6">
+                  <OverviewTab recommendations={recommendations} destinationCity={trip.destination_city} />
+                  <LanguageCultureTips destination={trip.destination_city} />
+                </div>
               </TabsContent>
 
               <TabsContent value="map">
@@ -206,7 +235,7 @@ export default function TripDetails() {
                       </div>
                       <div>
                         <h2 className="font-display text-xl font-semibold">Interactive Trip Map</h2>
-                        <p className="text-sm text-muted-foreground">Explore hotels and attractions with custom icons</p>
+                        <p className="text-sm text-muted-foreground">Explore hotels and attractions</p>
                       </div>
                     </div>
                     <EnhancedMap
@@ -231,6 +260,23 @@ export default function TripDetails() {
                 )}
               </TabsContent>
 
+              <TabsContent value="essentials">
+                <TravelerEssentials destination={trip.destination_city} boardingCity={trip.boarding_city} />
+              </TabsContent>
+
+              <TabsContent value="expenses">
+                <ExpenseTracker tripId={trip.id} budget={trip.budget} />
+              </TabsContent>
+
+              <TabsContent value="packing">
+                <PackingChecklist
+                  tripId={trip.id}
+                  destination={trip.destination_city}
+                  duration={trip.duration}
+                  weather={recommendations.weather}
+                />
+              </TabsContent>
+
               <TabsContent value="book">
                 <BookTicketsTab
                   boardingCity={trip.boarding_city}
@@ -240,6 +286,20 @@ export default function TripDetails() {
                 />
               </TabsContent>
             </Tabs>
+          )}
+
+          {/* Sidebar features below tabs */}
+          {recommendations && (
+            <div className="grid md:grid-cols-2 gap-6 mt-8">
+              <TripAssistant
+                destination={trip.destination_city}
+                boardingCity={trip.boarding_city}
+                duration={trip.duration}
+                budget={trip.budget}
+                recommendations={recommendations}
+              />
+              <TripRating tripId={trip.id} tripEndDate={trip.end_date} />
+            </div>
           )}
         </div>
       </div>

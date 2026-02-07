@@ -15,6 +15,7 @@ import PlanTrip from "./pages/PlanTrip";
 import MyTrips from "./pages/MyTrips";
 import TripDetails from "./pages/TripDetails";
 import NotFound from "./pages/NotFound";
+import TravelAnalytics from "./pages/TravelAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <TripDetails />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute>
+                    <TravelAnalytics />
                   </ProtectedRoute>
                 }
               />

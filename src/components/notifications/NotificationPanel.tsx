@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, CloudRain, Sun, Thermometer, Wind, Calendar, MapPin, X, Shirt } from "lucide-react";
+import { Bell, CloudRain, Sun, Thermometer, Wind, Calendar, MapPin, X, Shirt, Star, Ticket, Hotel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -85,9 +85,23 @@ function getTripReminders(trip: Trip): Notification[] {
   if (!trip.start_date) return [];
   const startDate = parseISO(trip.start_date);
   const daysUntil = differenceInDays(startDate, new Date());
-  if (daysUntil < 0) return [];
-  
   const notifications: Notification[] = [];
+
+  if (daysUntil < 0) {
+    // Post-trip reminder
+    if (daysUntil >= -7) {
+      notifications.push({
+        id: `post-trip-${trip.id}`,
+        icon: <Star className="w-4 h-4 text-amber-500" />,
+        title: "Rate your trip!",
+        message: `How was your trip to ${trip.destination_city}? Share your feedback.`,
+        time: "Post-trip",
+        type: "info",
+      });
+    }
+    return notifications;
+  }
+
   if (daysUntil === 0) {
     notifications.push({
       id: `reminder-today-${trip.id}`,
@@ -125,6 +139,31 @@ function getTripReminders(trip: Trip): Notification[] {
       type: "info",
     });
   }
+
+  // Book tickets reminder
+  if (daysUntil <= 14 && daysUntil > 3) {
+    notifications.push({
+      id: `book-tickets-${trip.id}`,
+      icon: <Ticket className="w-4 h-4 text-accent" />,
+      title: "Book your tickets",
+      message: `Book transport for ${trip.destination_city} trip soon`,
+      time: `${daysUntil} days away`,
+      type: "reminder",
+    });
+  }
+
+  // Hotel check-in reminder
+  if (daysUntil <= 2 && daysUntil >= 0) {
+    notifications.push({
+      id: `checkin-${trip.id}`,
+      icon: <Hotel className="w-4 h-4 text-blue-500" />,
+      title: "Confirm hotel check-in",
+      message: `Double-check your ${trip.destination_city} hotel reservation`,
+      time: daysUntil === 0 ? "Today" : "Tomorrow",
+      type: "reminder",
+    });
+  }
+
   return notifications;
 }
 

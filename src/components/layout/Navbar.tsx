@@ -31,6 +31,7 @@ export function Navbar() {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/plan-trip", label: "Plan Trip" },
     { href: "/my-trips", label: "My Trips" },
+    { href: "/analytics", label: "Analytics" },
   ];
 
   return (

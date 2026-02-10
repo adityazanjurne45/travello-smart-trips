@@ -147,7 +147,7 @@ export default function TripDetails() {
             </Link>
 
             <div className="relative h-48 md:h-64 rounded-2xl overflow-hidden mb-6">
-              <DestinationImage destination={trip.destination_city} className="w-full h-full" />
+              <DestinationImage destination={trip.destination_city} className="w-full h-full" showRefresh showLocationBadge />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
                 <h1 className="font-display text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-lg">

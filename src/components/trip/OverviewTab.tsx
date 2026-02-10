@@ -90,7 +90,7 @@ export function OverviewTab({ recommendations, destinationCity }: OverviewTabPro
           <div className="grid md:grid-cols-2 gap-4">
             {recommendations.touristPlaces.map((place, i) => (
               <div key={i} className="rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors overflow-hidden">
-                <PlaceImageGallery placeName={`${place.name} ${destinationCity}`} className="h-32" variant="single" showAttribution={false} />
+                <PlaceImageGallery placeName={`${place.name} ${destinationCity}`} className="h-32" variant="single" showAttribution={false} showLocationBadge />
                 <div className="p-4">
                   <h4 className="font-semibold text-foreground mb-2">{place.name}</h4>
                   <p className="text-sm text-muted-foreground mb-3">{place.description}</p>
@@ -120,7 +120,7 @@ export function OverviewTab({ recommendations, destinationCity }: OverviewTabPro
           <div className="grid md:grid-cols-3 gap-4">
             {recommendations.hotels.map((hotel, i) => (
               <div key={i} className="rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors overflow-hidden">
-                <PlaceImageGallery placeName={`${hotel.name} hotel ${destinationCity}`} className="h-28" variant="single" showAttribution={false} />
+                <PlaceImageGallery placeName={`${hotel.name} hotel ${destinationCity}`} className="h-28" variant="single" showAttribution={false} showLocationBadge />
                 <div className="p-4">
                   <h4 className="font-semibold text-foreground mb-1">{hotel.name}</h4>
                   <p className="text-sm text-muted-foreground mb-2">{hotel.location}</p>
